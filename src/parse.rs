@@ -4,6 +4,11 @@ use crate::text::{quote, split_lines};
 const WS: [char; 2] = [' ', '\t'];
 const STAR_MESSAGE: &str = "\"*\" is only allowed on the last field of the file layout";
 
+const RESERVED_NAMES: [&str; 18] = [
+    "struct", "end", "bytes", "str", "u8", "i8", "u16le", "u16be", "i16le", "i16be", "u32le",
+    "u32be", "i32le", "i32be", "u64le", "u64be", "i64le", "i64be",
+];
+
 fn valid_name(name: &str) -> bool {
     let mut chars = name.chars();
     match chars.next() {
@@ -12,6 +17,10 @@ fn valid_name(name: &str) -> bool {
         }
         _ => false,
     }
+}
+
+fn valid_declaration_name(name: &str) -> bool {
+    valid_name(name) && !RESERVED_NAMES.contains(&name)
 }
 
 fn next_token(s: &str) -> (&str, &str) {
@@ -41,7 +50,7 @@ pub fn parse_schema(display: &str, text: &str) -> Result<Schema, String> {
                 if tokens.len() != 2 {
                     return Err(fail("expected \"struct NAME\"".to_string()));
                 }
-                if !valid_name(tokens[1]) {
+                if !valid_declaration_name(tokens[1]) {
                     return Err(fail(format!("invalid name {}", quote(tokens[1]))));
                 }
                 if schema.structs.iter().any(|s| s.name == tokens[1]) {
@@ -145,7 +154,7 @@ fn parse_field(
         None => None,
         Some(text) => Some(parse_count(scope, in_struct, text)?),
     };
-    if !valid_name(name) {
+    if !valid_declaration_name(name) {
         return Err(format!("invalid name {}", quote(name)));
     }
     if let Some(first) = scope.iter().find(|f| f.name == name) {
