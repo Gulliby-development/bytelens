@@ -103,7 +103,7 @@ OFFSET  SIZE  TYPE         FIELD
 
 The schema is UTF-8 text (one leading BOM is skipped). Lines end with LF or CRLF. Each line is trimmed of spaces and tabs. Empty lines and lines starting with `#` are skipped.
 
-- Names match `[A-Za-z_][A-Za-z0-9_]*`.
+- Names match `[A-Za-z_][A-Za-z0-9_]*` and are not reserved: `struct`, `end`, `bytes`, `str` and the 14 integer type names (`u8` to `i64be`) are invalid as struct and field names.
 - `struct NAME` opens a struct and `end` closes it. Structs do not nest and use only structs defined earlier.
 - A field is `TYPE NAME` or `TYPE NAME = LITERAL`. Fields outside a struct form the root layout.
 
