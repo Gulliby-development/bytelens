@@ -29,10 +29,18 @@ The binary is `target/release/bytelens`.
 ```
 usage: bytelens decode SCHEMA FILE
        bytelens layout SCHEMA
-       bytelens dump [--width N] FILE
+       bytelens dump [--width N] [--skip N] FILE
 ```
 
-Every file argument is a path or `-` for standard input (named `<stdin>`). `--width N` or `--width=N` sets the number of bytes per line for `dump` (1 to 64, default 16).
+Every file argument is a path or `-` for standard input (named `<stdin>`). `--width N` or `--width=N` sets the number of bytes per line for `dump` (1 to 64, default 16). `--skip N` or `--skip=N` leaves out the first N bytes (a whole number from 0 to 1000000000, default 0); the offsets stay the offsets in the file, so `bytelens dump --skip 6 --width 4 chunks.bin` prints
+
+```
+00000006  02 01 03 00  |....|
+0000000a  aa bb cc 02  |....|
+0000000e  00 00 ff ee  |....|
+```
+
+A skip at or past the end of the data prints nothing and exits 0.
 
 Worked example. The file `chunks.schema`:
 
@@ -122,7 +130,7 @@ Literals: a scalar integer field may have a decimal literal (`123` or `-5`, no l
 - `decode` prints one line per field: the offset as 8 lowercase hex digits, two spaces, two more spaces per nesting level, then `NAME = VALUE`. Integers are decimal. `bytes` show lowercase hex pairs (the first 16, then ` ... (N bytes)`, or `(empty)`). `str` shows the bytes without trailing NULs in double quotes, with `"` and `\` escaped and `\xHH` for control characters. Integer arrays are shown as `[1, 2, 3]` (the first 16 items, then `, ... (N items)`). A struct prints its name and its fields one level deeper; a struct array prints `NAME[0]`, `NAME[1]` and so on.
 - When the data does not fit the schema, the lines printed so far stay on standard output and `bytelens: FILE: offset 0xHHHHHHHH: TEXT` goes to standard error.
 - `layout` prints a section for the root and one for every struct in definition order, each with a heading and a table of OFFSET, SIZE, TYPE and FIELD. Unknown sizes and offsets are shown as `?`.
-- `dump` prints lines of `--width` bytes: the offset, the bytes as hex pairs and the printable bytes between `|` characters.
+- `dump` prints lines of `--width` bytes: the offset, the bytes as hex pairs and the printable bytes between `|` characters. With `--skip N` the first line starts at offset N and every later line is `--width` bytes further on.
 
 Every line ends with LF on every operating system.
 

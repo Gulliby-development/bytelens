@@ -39,7 +39,7 @@ fn readme_has_usage_lines() {
     assert_block(&[
         "usage: bytelens decode SCHEMA FILE",
         "       bytelens layout SCHEMA",
-        "       bytelens dump [--width N] FILE",
+        "       bytelens dump [--width N] [--skip N] FILE",
     ]);
 }
 
