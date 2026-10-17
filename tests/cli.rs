@@ -39,7 +39,7 @@ fn help_alone_prints_usage() {
     assert_eq!(code, 0);
     assert_eq!(
         out,
-        "usage: bytelens decode SCHEMA FILE\n       bytelens layout SCHEMA\n       bytelens dump [--width N] FILE\n"
+        "usage: bytelens decode SCHEMA FILE\n       bytelens layout SCHEMA\n       bytelens dump [--width N] [--skip N] FILE\n"
     );
     assert_eq!(err, "");
 }

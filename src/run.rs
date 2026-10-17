@@ -2,7 +2,7 @@ use std::io::{Read, Write};
 
 use crate::args::{Action, Command, USAGE, parse_args};
 use crate::decode::decode;
-use crate::dump::dump;
+use crate::dump::dump_from;
 use crate::layout::layout;
 use crate::parse::parse_schema;
 use crate::schema::Schema;
@@ -34,6 +34,7 @@ fn execute(
     command: Command,
     files: &[String],
     width: usize,
+    skip: usize,
     stdin: &mut dyn Read,
     stdout: &mut dyn Write,
     stderr: &mut dyn Write,
@@ -63,7 +64,7 @@ fn execute(
         }
         Command::Dump => {
             let data = read_input(&files[0], stdin)?;
-            for line in dump(&data, width) {
+            for line in dump_from(&data, width, skip) {
                 let _ = writeln!(stdout, "{line}");
             }
             Ok(0)
@@ -94,6 +95,7 @@ pub fn run(
         parsed.command,
         &parsed.files,
         parsed.width,
+        parsed.skip,
         stdin,
         stdout,
         stderr,
