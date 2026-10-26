@@ -72,6 +72,15 @@ fn text_literal(field: &Field) -> Option<&[u8]> {
     }
 }
 
+/// Code points a terminal may act on or that hide text: the C1 controls, the bidirectional marks
+/// and isolates, the line and paragraph separators and the byte order mark.
+fn is_invisible(c: char) -> bool {
+    matches!(
+        c as u32,
+        0x80..=0x9f | 0x200e | 0x200f | 0x2028 | 0x2029 | 0x202a..=0x202e | 0x2066..=0x2069 | 0xfeff
+    )
+}
+
 fn str_display(text: &str) -> String {
     let mut out = String::from("\"");
     for c in text.chars() {
@@ -81,6 +90,7 @@ fn str_display(text: &str) -> String {
             c if (c as u32) < 0x20 || c as u32 == 0x7f => {
                 out.push_str(&format!("\\x{:02x}", c as u32));
             }
+            c if is_invisible(c) => out.push_str(&format!("<U+{:04X}>", c as u32)),
             c => out.push(c),
         }
     }
