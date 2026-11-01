@@ -4,7 +4,7 @@ use crate::text::quote;
 pub const USAGE: [&str; 3] = [
     "usage: bytelens decode SCHEMA FILE",
     "       bytelens layout SCHEMA",
-    "       bytelens dump [--width N] [--skip N] FILE",
+    "       bytelens dump [--width N] [--skip N] [--limit N] FILE",
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -20,6 +20,7 @@ pub struct Parsed {
     pub files: Vec<String>,
     pub width: usize,
     pub skip: usize,
+    pub limit: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,7 +40,7 @@ fn parse_width(text: &str) -> Option<usize> {
     (1..=64).contains(&value).then_some(value)
 }
 
-/// Parses a skip count from zero through one billion without leading zeroes.
+/// Parses a skip or limit count from zero through one billion without leading zeroes.
 fn parse_skip(text: &str) -> Option<usize> {
     if text == "0" {
         return Some(0);
@@ -71,6 +72,7 @@ pub fn parse_args(args: &[String]) -> Result<Action, String> {
     };
     let mut width: Option<&str> = None;
     let mut skip: Option<&str> = None;
+    let mut limit: Option<&str> = None;
     let mut files: Vec<String> = Vec::new();
     let mut i = 1;
     while i < args.len() {
@@ -91,10 +93,20 @@ pub fn parse_args(args: &[String]) -> Result<Action, String> {
             i += 2;
             continue;
         }
+        if arg == "--limit" {
+            let Some(value) = args.get(i + 1) else {
+                return Err("--limit needs a value".to_string());
+            };
+            limit = Some(value);
+            i += 2;
+            continue;
+        }
         if let Some(value) = arg.strip_prefix("--width=") {
             width = Some(value);
         } else if let Some(value) = arg.strip_prefix("--skip=") {
             skip = Some(value);
+        } else if let Some(value) = arg.strip_prefix("--limit=") {
+            limit = Some(value);
         } else if arg.starts_with('-') && arg != "-" {
             return Err(format!("unknown option {}", quote(arg)));
         } else {
@@ -122,11 +134,24 @@ pub fn parse_args(args: &[String]) -> Result<Action, String> {
     } else {
         0
     };
+    let limit_value = if let Some(text) = limit {
+        Some(parse_skip(text).ok_or_else(|| {
+            format!(
+                "invalid --limit {} (expected a whole number from 0 to 1000000000)",
+                quote(text)
+            )
+        })?)
+    } else {
+        None
+    };
     if width.is_some() && command != Command::Dump {
         return Err("--width is only valid for dump".to_string());
     }
     if skip.is_some() && command != Command::Dump {
         return Err("--skip is only valid for dump".to_string());
+    }
+    if limit.is_some() && command != Command::Dump {
+        return Err("--limit is only valid for dump".to_string());
     }
     let needed = if command == Command::Decode { 2 } else { 1 };
     if files.len() < needed {
@@ -143,5 +168,6 @@ pub fn parse_args(args: &[String]) -> Result<Action, String> {
         files,
         width: value,
         skip: skip_value,
+        limit: limit_value,
     }))
 }

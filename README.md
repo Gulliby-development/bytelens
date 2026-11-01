@@ -29,7 +29,7 @@ The binary is `target/release/bytelens`.
 ```
 usage: bytelens decode SCHEMA FILE
        bytelens layout SCHEMA
-       bytelens dump [--width N] [--skip N] FILE
+       bytelens dump [--width N] [--skip N] [--limit N] FILE
 ```
 
 Every file argument is a path or `-` for standard input (named `<stdin>`). `--width N` or `--width=N` sets the number of bytes per line for `dump` (1 to 64, default 16). `--skip N` or `--skip=N` leaves out the first N bytes (a whole number from 0 to 1000000000, default 0); the offsets stay the offsets in the file, so `bytelens dump --skip 6 --width 4 chunks.bin` prints
@@ -41,6 +41,15 @@ Every file argument is a path or `-` for standard input (named `<stdin>`). `--wi
 ```
 
 A skip at or past the end of the data prints nothing and exits 0.
+
+`--limit N` or `--limit=N` stops the dump after N bytes (a whole number from 0 to 1000000000, default: no limit). The bytes counted are the ones after the skip, and the offsets are still the offsets in the file, so `bytelens dump --skip 4 --limit 6 --width 4 chunks.bin` prints
+
+```
+00000004  00 02 02 01  |....|
+00000008  03 00        |..|
+```
+
+The last line is shorter when the limit ends inside a line, a limit larger than the rest of the data changes nothing, and `--limit 0` prints nothing and exits 0. Only `dump` takes `--limit`; a repeated option works as `--width` and `--skip` do: the last value wins.
 
 Worked example. The file `chunks.schema`:
 

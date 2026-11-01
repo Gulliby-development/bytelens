@@ -7,12 +7,20 @@ pub fn dump(data: &[u8], width: usize) -> Vec<String> {
 
 /// Hex dump lines starting at `skip`, retaining offsets from the original data.
 pub fn dump_from(data: &[u8], width: usize, skip: usize) -> Vec<String> {
+    dump_range(data, width, skip, None)
+}
+
+/// Hex dump lines of at most `limit` bytes (all the rest without a limit) starting at `skip`.
+pub fn dump_range(data: &[u8], width: usize, skip: usize, limit: Option<usize>) -> Vec<String> {
     if skip >= data.len() {
         return Vec::new();
     }
 
+    let end = limit.map_or(data.len(), |count| {
+        skip.saturating_add(count).min(data.len())
+    });
     let chunk_width = width.max(1);
-    data[skip..]
+    data[skip..end]
         .chunks(chunk_width)
         .enumerate()
         .map(|(i, chunk)| {
