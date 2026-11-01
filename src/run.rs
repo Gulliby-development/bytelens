@@ -1,8 +1,8 @@
 use std::io::{Read, Write};
 
-use crate::args::{Action, Command, USAGE, parse_args};
+use crate::args::{Action, Command, Parsed, USAGE, parse_args};
 use crate::decode::decode;
-use crate::dump::dump_from;
+use crate::dump::dump_range;
 use crate::layout::layout;
 use crate::parse::parse_schema;
 use crate::schema::Schema;
@@ -31,15 +31,13 @@ fn read_schema(path: &str, stdin: &mut dyn Read) -> Result<Schema, String> {
 }
 
 fn execute(
-    command: Command,
-    files: &[String],
-    width: usize,
-    skip: usize,
+    parsed: &Parsed,
     stdin: &mut dyn Read,
     stdout: &mut dyn Write,
     stderr: &mut dyn Write,
 ) -> Result<i32, String> {
-    match command {
+    let files = &parsed.files;
+    match parsed.command {
         Command::Decode => {
             let schema = read_schema(&files[0], stdin)?;
             let data = read_input(&files[1], stdin)?;
@@ -64,7 +62,7 @@ fn execute(
         }
         Command::Dump => {
             let data = read_input(&files[0], stdin)?;
-            for line in dump_from(&data, width, skip) {
+            for line in dump_range(&data, parsed.width, parsed.skip, parsed.limit) {
                 let _ = writeln!(stdout, "{line}");
             }
             Ok(0)
@@ -91,15 +89,7 @@ pub fn run(
             return 2;
         }
     };
-    match execute(
-        parsed.command,
-        &parsed.files,
-        parsed.width,
-        parsed.skip,
-        stdin,
-        stdout,
-        stderr,
-    ) {
+    match execute(&parsed, stdin, stdout, stderr) {
         Ok(code) => code,
         Err(message) => {
             let _ = writeln!(stderr, "bytelens: {message}");
